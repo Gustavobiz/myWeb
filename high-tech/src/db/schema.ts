@@ -19,21 +19,45 @@ export const categoryRelations = relations(categoryTable, ({ many }) => ({
 
 export const productTable = pgTable("products", {
   id: uuid().primaryKey().defaultRandom(),
-  categoryId: uuid()
+  categoryId: uuid("category_id")
     .notNull()
     .references(() => categoryTable.id),
   name: text().notNull(),
   slug: text().notNull().unique(),
   description: text().notNull(),
-  priceInCents: integer().notNull(),
-  createdAt: timestamp().notNull().defaultNow(),
+  priceInCents: integer("price_in_cents").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const productRelations = relations(productTable, ({ one }) => {
+export const productVariantTable = pgTable("product_variants", {
+  id: uuid().primaryKey().defaultRandom(),
+  productId: uuid("product_id")
+    .notNull()
+    .references(() => productTable.id),
+  name: text().notNull(),
+  slug: text().notNull().unique(),
+  description: text().notNull(),
+  priceInCents: integer("price_in_cents").notNull(),
+  imageUrl: text("image_url").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const productVariantRelations = relations(
+  productVariantTable,
+  ({ one }) => ({
+    product: one(productTable, {
+      fields: [productVariantTable.productId],
+      references: [productTable.id],
+    }),
+  }),
+);
+
+export const productRelations = relations(productTable, ({ one, many }) => {
   return {
     category: one(categoryTable, {
       fields: [productTable.categoryId],
       references: [categoryTable.id],
     }),
+    variants: many(productVariantTable),
   };
 });
